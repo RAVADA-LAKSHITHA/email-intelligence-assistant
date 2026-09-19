@@ -1,0 +1,20 @@
+# Python
+backend/venv/
+__pycache__/
+*.py[cod]
+*.db
+*.sqlite3
+
+# Secrets
+.env
+credentials.json
+token.json
+
+# Node
+node_modules/
+dist/
+.vite/
+
+# Editor / OS
+.vscode/
+.DS_Store
