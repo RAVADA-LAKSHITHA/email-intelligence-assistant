@@ -2,13 +2,13 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.core.config import settings
+from app.api.auth import router as auth_router          # NEW
 
 app = FastAPI(
     title=settings.APP_NAME,
     version="0.1.0",
 )
 
-# CORS lets your React app (a different port) call this API from the browser.
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[settings.FRONTEND_URL],
@@ -17,8 +17,9 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+app.include_router(auth_router)                          # NEW
+
 
 @app.get("/health")
 def health_check():
-    """Simple endpoint to confirm the API is alive."""
     return {"status": "ok", "app": settings.APP_NAME}

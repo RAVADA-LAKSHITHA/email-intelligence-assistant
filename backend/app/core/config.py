@@ -7,8 +7,12 @@ class Settings(BaseSettings):
     APP_NAME: str = "AI Email Intelligence Assistant"
     DEBUG: bool = True
 
-    # Comma-free single origin for now; we add more later.
     FRONTEND_URL: str = "http://localhost:5173"
+
+    # Google OAuth
+    GOOGLE_CLIENT_ID: str
+    GOOGLE_CLIENT_SECRET: str
+    GOOGLE_REDIRECT_URI: str = "http://localhost:8000/api/auth/google/callback"
 
     model_config = SettingsConfigDict(
         env_file=".env",
