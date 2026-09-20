@@ -3,6 +3,7 @@ from fastapi.responses import RedirectResponse
 
 from app.core.config import settings
 from app.services.google_auth import get_authorization_url, exchange_code_for_credentials
+from app.services.gmail import fetch_recent_emails
 
 router = APIRouter(prefix="/api/auth/google", tags=["auth"])
 
@@ -51,3 +52,15 @@ def callback(request: Request, code: str | None = None, state: str | None = None
     response.delete_cookie("oauth_state")
     response.delete_cookie("oauth_code_verifier")
     return response
+
+@router.get("/test-fetch")
+def test_fetch(access_token: str, refresh_token: str):
+    """TEMPORARY debug endpoint — paste tokens from the callback console output."""
+    emails = fetch_recent_emails(
+        access_token=access_token,
+        refresh_token=refresh_token,
+        client_id=settings.GOOGLE_CLIENT_ID,
+        client_secret=settings.GOOGLE_CLIENT_SECRET,
+        count=5,
+    )
+    return {"count": len(emails), "emails": emails}
