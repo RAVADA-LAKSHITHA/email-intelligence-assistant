@@ -2,6 +2,7 @@ from google_auth_oauthlib.flow import Flow
 from google.oauth2.credentials import Credentials
 
 from app.core.config import settings
+import requests
 
 # Scopes must match exactly what you configured on the OAuth consent screen.
 SCOPES = [
@@ -53,3 +54,12 @@ def exchange_code_for_credentials(code: str, code_verifier: str) -> Credentials:
     flow.code_verifier = code_verifier  # restore the PKCE verifier from /login
     flow.fetch_token(code=code)
     return flow.credentials
+
+def get_user_email(access_token: str) -> str:
+    """Calls Google's userinfo endpoint to get the logged-in user's email."""
+    response = requests.get(
+        "https://www.googleapis.com/oauth2/v2/userinfo",
+        headers={"Authorization": f"Bearer {access_token}"},
+    )
+    response.raise_for_status()
+    return response.json()["email"]
