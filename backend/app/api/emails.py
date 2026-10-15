@@ -213,3 +213,35 @@ def email_digest(
         "action_count": sum(1 for e in rows if e.has_action_item),
         "digest": digest,
     }
+
+@router.get("/{email_id}")
+def get_email(
+    email_id: int,
+    email: str = Query(..., description="Logged-in user's email"),
+    db: Session = Depends(get_db),
+):
+    user = _get_user_or_404(db, email)
+
+    item = (
+        db.query(Email)
+        .filter(Email.id == email_id, Email.user_id == user.id)
+        .first()
+    )
+    if not item:
+        raise HTTPException(status_code=404, detail="Email not found")
+
+    return {
+        "id": item.id,
+        "gmail_id": item.gmail_id,
+        "thread_id": item.thread_id,
+        "subject": item.subject,
+        "sender": item.sender,
+        "received_at": item.received_at,
+        "labels": item.labels,
+        "category": item.category,
+        "summary": item.summary,
+        "has_action_item": item.has_action_item,
+        "deadline": item.deadline,
+        "snippet": item.snippet,
+        "body": item.body,
+    }
