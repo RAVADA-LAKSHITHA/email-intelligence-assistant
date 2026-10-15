@@ -4,6 +4,11 @@ from sqlalchemy.sql import func
 
 from app.core.database import Base
 
+from sqlalchemy import Boolean, DateTime
+
+received_at = Column(DateTime, nullable=True)
+has_action_item = Column(Boolean, nullable=False, default=False)
+
 
 class Email(Base):
     __tablename__ = "emails"

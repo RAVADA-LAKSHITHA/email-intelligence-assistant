@@ -1,4 +1,5 @@
-from datetime import datetime
+from datetime import datetime, timezone
+from email.utils import parsedate_to_datetime
 
 from fastapi import APIRouter, HTTPException, Depends, Query
 from sqlalchemy import func
@@ -21,6 +22,17 @@ def _get_user_or_404(db: Session, email: str) -> User:
         raise HTTPException(status_code=404, detail="User not found")
     return user
 
+def _parse_gmail_date(raw: str | None) -> datetime | None:
+    """Gmail 'Date' header (RFC 2822 text) -> naive UTC datetime."""
+    if not raw:
+        return None
+    try:
+        dt = parsedate_to_datetime(raw)
+    except (TypeError, ValueError):
+        return None
+    if dt.tzinfo is not None:
+        dt = dt.astimezone(timezone.utc).replace(tzinfo=None)
+    return dt
 
 @router.post("/sync")
 def sync_emails(
@@ -82,11 +94,11 @@ def sync_emails(
             sender=msg["sender"],
             snippet=msg["snippet"],
             body=msg["body"],
-            received_at=msg["date"],
+            received_at=_parse_gmail_date(msg["date"]),
             labels=msg["labels"],
             category=analysis["category"],
             summary=analysis.get("summary"),
-            has_action_item=str(bool(analysis.get("has_action_item"))),
+            has_action_item=bool(analysis.get("has_action_item")),
             deadline=deadline_value,
         ))
         new_count += 1
