@@ -116,6 +116,7 @@ def sync_emails(
 def list_emails(
     email: str = Query(...),
     category: str | None = Query(None, description="Optional: only show this category"),
+    action_only: bool = Query(False, description="If true, only emails that need action"),
     db: Session = Depends(get_db),
 ):
     user = _get_user_or_404(db, email)
@@ -129,8 +130,10 @@ def list_emails(
     query = db.query(Email).filter(Email.user_id == user.id)
     if category:
         query = query.filter(Email.category == category)
+    if action_only:
+        query = query.filter(Email.has_action_item.is_(True))
 
-    emails = query.order_by(Email.fetched_at.desc()).all()
+    emails = query.order_by(Email.received_at.desc().nulls_last()).all()
     return {
         "count": len(emails),
         "emails": [
