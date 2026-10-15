@@ -5,6 +5,9 @@ from fastapi import APIRouter, HTTPException, Depends, Query
 from sqlalchemy import func
 from sqlalchemy.orm import Session
 
+from datetime import datetime, timedelta, timezone
+from app.services.gemini_service import analyze_email, generate_digest, VALID_CATEGORIES
+
 from app.core.config import settings
 from app.core.database import get_db
 from app.models.user import User
@@ -165,4 +168,48 @@ def email_stats(email: str = Query(...), db: Session = Depends(get_db)):
     return {
         "total": sum(count for _, count in rows),
         "by_category": {cat or "Uncategorized": count for cat, count in rows},
+    }
+
+@router.get("/digest")
+def email_digest(
+    email: str = Query(...),
+    hours: int = Query(24, ge=1, le=720, description="Look back this many hours"),
+    db: Session = Depends(get_db),
+):
+    user = _get_user_or_404(db, email)
+
+    since = datetime.now(timezone.utc).replace(tzinfo=None) - timedelta(hours=hours)
+    rows = (
+        db.query(Email)
+        .filter(Email.user_id == user.id, Email.received_at >= since)
+        .order_by(Email.received_at.desc())
+        .limit(50)
+        .all()
+    )
+
+    if not rows:
+        return {"email_count": 0, "action_count": 0, "digest": "No emails in this time range."}
+
+    items = [
+        {
+            "subject": e.subject,
+            "category": e.category,
+            "summary": e.summary,
+            "needs_action": e.has_action_item,
+            "deadline": e.deadline.date().isoformat() if e.deadline else None,
+        }
+        for e in rows
+    ]
+
+    digest = generate_digest(items)
+    if digest is None:
+        raise HTTPException(
+            status_code=503,
+            detail="Could not generate the digest right now. Try again in a minute.",
+        )
+
+    return {
+        "email_count": len(rows),
+        "action_count": sum(1 for e in rows if e.has_action_item),
+        "digest": digest,
     }

@@ -4,6 +4,7 @@ import time
 
 from google import genai
 from google.genai import types
+from datetime import datetime, timezone
 
 from app.core.config import settings
 
@@ -65,17 +66,20 @@ def _throttle() -> None:
     _last_call_time = time.monotonic()
 
 
-def _generate(prompt: str):
+def _generate(prompt: str, json_mode: bool = True):
     """Calls Gemini, retrying temporary failures with growing waits."""
+    config = (
+        types.GenerateContentConfig(response_mime_type="application/json")
+        if json_mode
+        else types.GenerateContentConfig()
+    )
     for attempt in range(len(RETRY_DELAYS) + 1):
         _throttle()
         try:
             return client.models.generate_content(
                 model=settings.GEMINI_MODEL,
                 contents=prompt,
-                config=types.GenerateContentConfig(
-                    response_mime_type="application/json",
-                ),
+                config=config,
             )
         except Exception as exc:
             code = getattr(exc, "code", None)
@@ -114,3 +118,32 @@ def analyze_email(subject: str, sender: str, body: str, snippet: str, received_a
         result["category"] = "Other"
 
     return result
+
+DIGEST_PROMPT = """You are an assistant that writes a short digest of someone's recent emails.
+
+Below is a JSON list of emails. Each has a subject, a category, a one-line summary, whether it needs action, and an optional deadline.
+
+Write the digest as plain text, at most 5 short lines:
+- Line 1: one sentence on the overall picture (how many emails, what kinds).
+- Then list what the person must do, with deadlines, most urgent first. Skip this if nothing needs action.
+- Finish with one short line about the rest (for example: the remaining emails are promotions).
+Do not use markdown symbols. Do not invent anything that is not in the list. Today's date is {today}.
+
+Emails:
+{emails_json}
+"""
+
+
+def generate_digest(items: list[dict]) -> str | None:
+    """Turns a list of email summaries into one short digest. Returns None on failure."""
+    prompt = DIGEST_PROMPT.format(
+        today=datetime.now(timezone.utc).date().isoformat(),
+        emails_json=json.dumps(items, ensure_ascii=False),
+    )
+    try:
+        response = _generate(prompt, json_mode=False)
+        text = (response.text or "").strip()
+    except Exception as exc:
+        logger.warning("Gemini digest failed: %s", exc)
+        return None
+    return text or None
