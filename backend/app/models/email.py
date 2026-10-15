@@ -1,13 +1,8 @@
-from sqlalchemy import Column, Integer, String, Text, Boolean, DateTime, ForeignKey, JSON
+from sqlalchemy import Column, Integer, String, Text, DateTime, Boolean, ForeignKey, JSON
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 
 from app.core.database import Base
-
-from sqlalchemy import Boolean, DateTime
-
-received_at = Column(DateTime, nullable=True)
-has_action_item = Column(Boolean, nullable=False, default=False)
 
 
 class Email(Base):
@@ -23,13 +18,12 @@ class Email(Base):
     sender = Column(String, nullable=True)
     snippet = Column(Text, nullable=True)
     body = Column(Text, nullable=True)
-    received_at = Column(String, nullable=True)   # raw Gmail date header for now
+    received_at = Column(DateTime, nullable=True)
     labels = Column(JSON, nullable=True)
 
-    # Fields for Phases 5–8 — nullable now, filled in later
     category = Column(String, nullable=True)
     summary = Column(Text, nullable=True)
-    has_action_item = Column(String, nullable=True)
+    has_action_item = Column(Boolean, nullable=False, default=False)
     deadline = Column(DateTime(timezone=True), nullable=True)
 
     fetched_at = Column(DateTime(timezone=True), server_default=func.now())
