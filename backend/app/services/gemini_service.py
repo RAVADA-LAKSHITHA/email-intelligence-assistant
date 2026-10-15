@@ -1,7 +1,6 @@
 import json
 import logging
 import time
-from datetime import datetime, timezone
 
 from google import genai
 from google.genai import types
@@ -22,15 +21,29 @@ ANALYSIS_PROMPT = """You are an email triage assistant. Analyze the email below 
 {{
   "category": one of {categories},
   "summary": a 1-2 sentence plain-English summary of the email's content,
-  "has_action_item": true or false (true if the recipient needs to DO something: reply, pay, attend, complete a task, click a link to act),
+  "has_action_item": true or false,
   "action_item_description": a short phrase describing the action needed, or null if has_action_item is false,
-  "deadline": an ISO 8601 date (YYYY-MM-DD) if the email mentions a specific deadline or date the recipient should act by, or null if there is none
+  "deadline": an ISO 8601 date (YYYY-MM-DD) or null
 }}
 
-Today's date is {today}. Use it to convert relative dates like "today" or "this Friday" into real dates.
+Category guide:
+- Promotions: marketing, offers, discounts, newsletters, and engagement nudges from apps and services (streak reminders, "try our new feature", trial offers).
+- Finance: bank statements, transactions, bills, payment and tax notices.
+- Security: sign-in alerts, password and 2-step verification notices.
+- Work: messages about jobs, internships, interviews, or colleagues.
+- Education: courses, assignments, exams, and college or learning-platform notices that are not marketing.
+- Personal: messages from real people such as friends and family.
+- Social: social network notifications.
+- Spam: unsolicited or suspicious mail.
+- Other: anything else.
+
+Rules for has_action_item: true ONLY if the recipient genuinely needs to do something specific, such as pay a bill, reply to a person, attend a meeting, submit something, or secure their account. Marketing calls to action ("try now", "claim offer", "keep your streak") are NOT action items, so use false for them.
+
+Rules for deadline: set a date ONLY when has_action_item is true and the email gives a real due date or event date. Offer expiry dates in marketing emails are not deadlines, so use null. This email was sent on {sent}. Resolve relative dates such as "today" or "this Friday" against that sent date, not against today's date.
 
 Email subject: {subject}
 Email sender: {sender}
+Email sent: {sent}
 Email body:
 {body}
 """
@@ -73,14 +86,14 @@ def _generate(prompt: str):
             time.sleep(delay)
 
 
-def analyze_email(subject: str, sender: str, body: str, snippet: str) -> dict | None:
+def analyze_email(subject: str, sender: str, body: str, snippet: str, received_at: str | None = None) -> dict | None:
     """Sends one email to Gemini. Returns the analysis dict, or None if anything fails."""
 
     content = body.strip() if body and body.strip() else (snippet or "")
 
     prompt = ANALYSIS_PROMPT.format(
         categories=VALID_CATEGORIES,
-        today=datetime.now(timezone.utc).date().isoformat(),
+        sent=received_at or "unknown",
         subject=subject or "(no subject)",
         sender=sender or "(unknown sender)",
         body=content[:6000],

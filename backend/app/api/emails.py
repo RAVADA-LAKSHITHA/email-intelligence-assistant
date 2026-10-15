@@ -45,6 +45,7 @@ def sync_emails(email: str = Query(..., description="Logged-in user's email"), d
             sender=msg["sender"],
             body=msg["body"],
             snippet=msg["snippet"],
+            received_at=msg["date"]
         )
         if analysis is None:
             failed_count += 1  # not saved, so the next sync retries it
