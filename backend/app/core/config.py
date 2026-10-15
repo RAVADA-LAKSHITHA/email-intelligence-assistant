@@ -14,13 +14,18 @@ class Settings(BaseSettings):
     GOOGLE_CLIENT_SECRET: str
     GOOGLE_REDIRECT_URI: str = "http://localhost:8000/api/auth/google/callback"
 
-    DATABASE_URL: str = "sqlite:///./email_assistant.db"   # NEW
+    DATABASE_URL: str = "sqlite:///./email_assistant.db"
+
+    GEMINI_API_KEY: str    # NEW
+    GEMINI_MODEL: str = "gemini-3.5-flash"
+    GEMINI_MIN_INTERVAL_SECONDS: float = 13.0
 
     model_config = SettingsConfigDict(
         env_file=".env",
         env_file_encoding="utf-8",
         extra="ignore",
     )
+
 
 
 settings = Settings()
