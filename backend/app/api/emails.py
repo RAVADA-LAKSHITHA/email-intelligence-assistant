@@ -1,6 +1,7 @@
 from datetime import datetime
 
 from fastapi import APIRouter, HTTPException, Depends, Query
+from sqlalchemy import func
 from sqlalchemy.orm import Session
 
 from app.core.config import settings
@@ -8,14 +9,24 @@ from app.core.database import get_db
 from app.models.user import User
 from app.models.email import Email
 from app.services.gmail import fetch_recent_emails
-from app.services.gemini_service import analyze_email
+from app.services.gemini_service import analyze_email, VALID_CATEGORIES
 
 router = APIRouter(prefix="/api/emails", tags=["emails"])
 MAX_CONSECUTIVE_FAILURES = 3  # stop early if Gemini is clearly struggling
 
 
+def _get_user_or_404(db: Session, email: str) -> User:
+    user = db.query(User).filter(User.email == email).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    return user
+
+
 @router.post("/sync")
-def sync_emails(email: str = Query(..., description="Logged-in user's email"), db: Session = Depends(get_db)):
+def sync_emails(
+    email: str = Query(..., description="Logged-in user's email"),
+    db: Session = Depends(get_db),
+):
     user = db.query(User).filter(User.email == email).first()
     if not user or not user.oauth_token:
         raise HTTPException(status_code=404, detail="User not found or not logged in")
@@ -45,7 +56,7 @@ def sync_emails(email: str = Query(..., description="Logged-in user's email"), d
             sender=msg["sender"],
             body=msg["body"],
             snippet=msg["snippet"],
-            received_at=msg["date"]
+            received_at=msg["date"],
         )
         if analysis is None:
             failed_count += 1  # not saved, so the next sync retries it
@@ -88,18 +99,26 @@ def sync_emails(email: str = Query(..., description="Logged-in user's email"), d
         "stopped_early": stopped_early,
     }
 
-@router.get("")
-def list_emails(email: str = Query(...), db: Session = Depends(get_db)):
-    user = db.query(User).filter(User.email == email).first()
-    if not user:
-        raise HTTPException(status_code=404, detail="User not found")
 
-    emails = (
-        db.query(Email)
-        .filter(Email.user_id == user.id)
-        .order_by(Email.fetched_at.desc())
-        .all()
-    )
+@router.get("")
+def list_emails(
+    email: str = Query(...),
+    category: str | None = Query(None, description="Optional: only show this category"),
+    db: Session = Depends(get_db),
+):
+    user = _get_user_or_404(db, email)
+
+    if category is not None and category not in VALID_CATEGORIES:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Unknown category '{category}'. Valid: {VALID_CATEGORIES}",
+        )
+
+    query = db.query(Email).filter(Email.user_id == user.id)
+    if category:
+        query = query.filter(Email.category == category)
+
+    emails = query.order_by(Email.fetched_at.desc()).all()
     return {
         "count": len(emails),
         "emails": [
@@ -115,4 +134,20 @@ def list_emails(email: str = Query(...), db: Session = Depends(get_db)):
             }
             for e in emails
         ],
+    }
+
+
+@router.get("/stats")
+def email_stats(email: str = Query(...), db: Session = Depends(get_db)):
+    user = _get_user_or_404(db, email)
+
+    rows = (
+        db.query(Email.category, func.count(Email.id))
+        .filter(Email.user_id == user.id)
+        .group_by(Email.category)
+        .all()
+    )
+    return {
+        "total": sum(count for _, count in rows),
+        "by_category": {cat or "Uncategorized": count for cat, count in rows},
     }
