@@ -1,37 +1,14 @@
-const CATEGORY_STYLES = {
-  Work: "bg-blue-500/20 text-blue-300",
-  Personal: "bg-purple-500/20 text-purple-300",
-  Finance: "bg-green-500/20 text-green-300",
-  Promotions: "bg-orange-500/20 text-orange-300",
-  Security: "bg-red-500/20 text-red-300",
-  Social: "bg-pink-500/20 text-pink-300",
-  Education: "bg-cyan-500/20 text-cyan-300",
-  Spam: "bg-slate-500/20 text-slate-300",
-  Other: "bg-slate-500/20 text-slate-300",
-};
+import { CATEGORY_STYLES, formatReceived, formatDeadline } from "../utils";
 
-// The backend stores times in UTC without a "Z", so we add it before converting to local time.
-function formatReceived(value) {
-  if (!value) return "";
-  return new Date(value + "Z").toLocaleString("en-IN", {
-    day: "numeric",
-    month: "short",
-    hour: "2-digit",
-    minute: "2-digit",
-  });
-}
-
-function formatDeadline(value) {
-  if (!value) return null;
-  return new Date(value).toLocaleDateString("en-IN", { day: "numeric", month: "short" });
-}
-
-function EmailCard({ email }) {
+function EmailCard({ email, onOpen }) {
   const badgeStyle = CATEGORY_STYLES[email.category] || CATEGORY_STYLES.Other;
   const deadline = formatDeadline(email.deadline);
 
   return (
-    <div className="rounded-xl border border-slate-800 bg-slate-800/40 p-4">
+    <div
+      onClick={() => onOpen(email.id)}
+      className="cursor-pointer rounded-xl border border-slate-800 bg-slate-800/40 p-4 transition hover:border-slate-600 hover:bg-slate-800/70"
+    >
       <div className="flex items-start justify-between gap-4">
         <div className="min-w-0">
           <h3 className="truncate font-semibold text-white">{email.subject}</h3>

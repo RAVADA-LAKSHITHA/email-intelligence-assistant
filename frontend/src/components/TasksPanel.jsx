@@ -1,10 +1,7 @@
 import { useState, useEffect } from "react";
 import { apiGet } from "../api";
+import { formatDeadline } from "../utils";
 
-function formatDeadline(value) {
-  if (!value) return null;
-  return new Date(value).toLocaleDateString("en-IN", { day: "numeric", month: "short" });
-}
 
 function TasksPanel({ userEmail, refreshKey }) {
   const [data, setData] = useState(null);
