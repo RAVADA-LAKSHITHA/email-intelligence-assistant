@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { LOGIN_URL } from "./api";
+import Dashboard from "./pages/Dashboard";
 
 const STORAGE_KEY = "userEmail";
 
@@ -55,8 +56,8 @@ function App() {
           </button>
         </div>
       </header>
-      <main className="p-6">
-        <p className="text-slate-400">Connected. Your emails will appear here in the next step.</p>
+      <main className="mx-auto max-w-3xl p-6">
+        <Dashboard userEmail={userEmail} />
       </main>
     </div>
   );
