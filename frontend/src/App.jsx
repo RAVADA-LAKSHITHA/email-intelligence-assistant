@@ -56,7 +56,7 @@ function App() {
           </button>
         </div>
       </header>
-      <main className="mx-auto max-w-3xl p-6">
+      <main className="mx-auto max-w-6xl p-6">
         <Dashboard userEmail={userEmail} />
       </main>
     </div>
