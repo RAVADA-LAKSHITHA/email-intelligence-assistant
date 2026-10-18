@@ -29,3 +29,6 @@ class Email(Base):
     fetched_at = Column(DateTime(timezone=True), server_default=func.now())
 
     user = relationship("User", back_populates="emails")
+
+    has_action_item = Column(Boolean, nullable=False, default=False)
+    action_item_description = Column(String, nullable=True)

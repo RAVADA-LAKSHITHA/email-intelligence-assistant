@@ -101,8 +101,9 @@ def sync_emails(
             labels=msg["labels"],
             category=analysis["category"],
             summary=analysis.get("summary"),
-            has_action_item=bool(analysis.get("has_action_item")),
             deadline=deadline_value,
+            has_action_item=bool(analysis.get("has_action_item")),
+            action_item_description=analysis.get("action_item_description"),
         ))
         new_count += 1
 
@@ -244,4 +245,6 @@ def get_email(
         "deadline": item.deadline,
         "snippet": item.snippet,
         "body": item.body,
+        "has_action_item": item.has_action_item,
+        "action_item_description": item.action_item_description,
     }
