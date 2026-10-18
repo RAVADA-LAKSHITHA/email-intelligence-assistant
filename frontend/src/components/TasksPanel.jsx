@@ -6,7 +6,7 @@ function formatDeadline(value) {
   return new Date(value).toLocaleDateString("en-IN", { day: "numeric", month: "short" });
 }
 
-function TasksPanel({ userEmail }) {
+function TasksPanel({ userEmail, refreshKey }) {
   const [data, setData] = useState(null);
   const [error, setError] = useState(null);
 
@@ -14,7 +14,7 @@ function TasksPanel({ userEmail }) {
     apiGet("/api/tasks", { email: userEmail })
       .then(setData)
       .catch((err) => setError(err.message));
-  }, [userEmail]);
+  }, [userEmail, refreshKey]);
 
   return (
     <section className="rounded-xl border border-slate-800 bg-slate-800/40 p-4">
