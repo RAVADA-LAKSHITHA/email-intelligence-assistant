@@ -24,7 +24,7 @@ class Email(Base):
     category = Column(String, nullable=True)
     summary = Column(Text, nullable=True)
     has_action_item = Column(Boolean, nullable=False, default=False)
-    deadline = Column(DateTime(timezone=True), nullable=True)
+    deadline = Column(DateTime, nullable=True)
 
     fetched_at = Column(DateTime(timezone=True), server_default=func.now())
 

@@ -1,8 +1,8 @@
-"""create users, oauth_tokens, emails tables
+"""baseline schema
 
-Revision ID: 5503f7c238d4
+Revision ID: 4d278d0a04c7
 Revises: 
-Create Date: 2026-09-20 16:15:40.901539
+Create Date: 2026-10-19 17:25:58.723309
 
 """
 from typing import Sequence, Union
@@ -12,7 +12,7 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision: str = '5503f7c238d4'
+revision: str = '4d278d0a04c7'
 down_revision: Union[str, Sequence[str], None] = None
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
@@ -24,7 +24,7 @@ def upgrade() -> None:
     op.create_table('users',
     sa.Column('id', sa.Integer(), nullable=False),
     sa.Column('email', sa.String(), nullable=False),
-    sa.Column('created_at', sa.DateTime(timezone=True), server_default=sa.text('(CURRENT_TIMESTAMP)'), nullable=True),
+    sa.Column('created_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=True),
     sa.PrimaryKeyConstraint('id')
     )
     op.create_index(op.f('ix_users_email'), 'users', ['email'], unique=True)
@@ -38,13 +38,14 @@ def upgrade() -> None:
     sa.Column('sender', sa.String(), nullable=True),
     sa.Column('snippet', sa.Text(), nullable=True),
     sa.Column('body', sa.Text(), nullable=True),
-    sa.Column('received_at', sa.String(), nullable=True),
+    sa.Column('received_at', sa.DateTime(), nullable=True),
     sa.Column('labels', sa.JSON(), nullable=True),
     sa.Column('category', sa.String(), nullable=True),
     sa.Column('summary', sa.Text(), nullable=True),
-    sa.Column('has_action_item', sa.String(), nullable=True),
-    sa.Column('deadline', sa.DateTime(timezone=True), nullable=True),
-    sa.Column('fetched_at', sa.DateTime(timezone=True), server_default=sa.text('(CURRENT_TIMESTAMP)'), nullable=True),
+    sa.Column('has_action_item', sa.Boolean(), nullable=False),
+    sa.Column('deadline', sa.DateTime(), nullable=True),
+    sa.Column('fetched_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=True),
+    sa.Column('action_item_description', sa.String(), nullable=True),
     sa.ForeignKeyConstraint(['user_id'], ['users.id'], ),
     sa.PrimaryKeyConstraint('id')
     )
@@ -57,7 +58,7 @@ def upgrade() -> None:
     sa.Column('access_token', sa.String(), nullable=False),
     sa.Column('refresh_token', sa.String(), nullable=False),
     sa.Column('expires_at', sa.DateTime(timezone=True), nullable=True),
-    sa.Column('updated_at', sa.DateTime(timezone=True), server_default=sa.text('(CURRENT_TIMESTAMP)'), nullable=True),
+    sa.Column('updated_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=True),
     sa.ForeignKeyConstraint(['user_id'], ['users.id'], ),
     sa.PrimaryKeyConstraint('id'),
     sa.UniqueConstraint('user_id')
