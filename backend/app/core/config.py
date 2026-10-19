@@ -20,6 +20,8 @@ class Settings(BaseSettings):
     GEMINI_MODEL: str = "gemini-3.5-flash"
     GEMINI_MIN_INTERVAL_SECONDS: float = 13.0
 
+    SYNC_MAX_EMAILS: int = 25
+
     model_config = SettingsConfigDict(
         env_file=".env",
         env_file_encoding="utf-8",

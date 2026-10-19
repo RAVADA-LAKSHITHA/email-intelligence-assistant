@@ -7,7 +7,7 @@ from app.core.config import settings
 from app.core.database import SessionLocal
 from app.models.user import User
 from app.models.email import Email
-from app.services.gmail import fetch_recent_emails
+from app.services.gmail import get_gmail_service, list_message_ids, get_message_detail
 from app.services.gemini_service import analyze_email
 
 logger = logging.getLogger(__name__)
@@ -61,7 +61,7 @@ def _update(user_id: int, **changes) -> None:
 
 
 def run_sync(user_id: int) -> None:
-    """Runs in the background: fetch from Gmail, analyze new emails with Gemini, save them."""
+    """Runs in the background: list recent Gmail messages, analyze the new ones with Gemini, save them."""
     db = SessionLocal()  # the background job needs its own database session
     try:
         user = db.get(User, user_id)
@@ -69,34 +69,43 @@ def run_sync(user_id: int) -> None:
             raise RuntimeError("User not found or not logged in")
         token = user.oauth_token
 
-        fetched = fetch_recent_emails(
-            access_token=token.access_token,
-            refresh_token=token.refresh_token,
-            client_id=settings.GOOGLE_CLIENT_ID,
-            client_secret=settings.GOOGLE_CLIENT_SECRET,
-            count=10,
+        service = get_gmail_service(
+            token.access_token,
+            token.refresh_token,
+            settings.GOOGLE_CLIENT_ID,
+            settings.GOOGLE_CLIENT_SECRET,
         )
 
-        ids = [m["id"] for m in fetched]
+        # Step 1: list the newest message ids (cheap: ids only, no content yet).
+        ids = list_message_ids(service, max_results=settings.SYNC_MAX_EMAILS)
+
+        # Step 2: keep only the ones we have not saved before.
         existing = {
             row[0] for row in db.query(Email.gmail_id).filter(Email.gmail_id.in_(ids)).all()
         }
-        new_msgs = [m for m in fetched if m["id"] not in existing]
-        _update(user_id, total=len(new_msgs))
+        new_ids = [i for i in ids if i not in existing]
+        _update(user_id, total=len(new_ids))
 
         new_count = 0
         failed_count = 0
         consecutive_failures = 0
         stopped_early = False
 
-        for msg in new_msgs:
-            analysis = analyze_email(
-                subject=msg["subject"],
-                sender=msg["sender"],
-                body=msg["body"],
-                snippet=msg["snippet"],
-                received_at=msg["date"],
-            )
+        # Step 3: download and analyze each new email, newest first.
+        for gmail_id in new_ids:
+            msg = None
+            analysis = None
+            try:
+                msg = get_message_detail(service, gmail_id)
+                analysis = analyze_email(
+                    subject=msg["subject"],
+                    sender=msg["sender"],
+                    body=msg["body"],
+                    snippet=msg["snippet"],
+                    received_at=msg["date"],
+                )
+            except Exception as exc:
+                logger.warning("Could not process email %s: %s", gmail_id, exc)
 
             if analysis is None:
                 failed_count += 1
