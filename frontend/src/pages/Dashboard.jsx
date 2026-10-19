@@ -17,7 +17,7 @@ function Dashboard({ userEmail }) {
   const [error, setError] = useState(null);
 
   useEffect(() => {
-    apiGet("/api/emails/stats", { email: userEmail })
+    apiGet("/api/emails/stats", {})
       .then(setStats)
       .catch((err) => setError(err.message));
   }, [userEmail, refreshKey]);
@@ -25,7 +25,7 @@ function Dashboard({ userEmail }) {
   useEffect(() => {
     setLoading(true);
     setError(null);
-    apiGet("/api/emails", { email: userEmail, category })
+    apiGet("/api/emails", {  category })
       .then((data) => setEmails(data.emails))
       .catch((err) => setError(err.message))
       .finally(() => setLoading(false));

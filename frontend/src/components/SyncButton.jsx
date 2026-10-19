@@ -25,12 +25,12 @@ function SyncButton({ userEmail, onSynced }) {
     setMessage(null);
 
     try {
-      await apiPost("/api/emails/sync", { email: userEmail });
+      await apiPost("/api/emails/sync", {});
 
       let lastSaved = 0;
       while (true) {
         await sleep(2000);
-        const status = await apiGet("/api/emails/sync/status", { email: userEmail });
+        const status = await apiGet("/api/emails/sync/status", {});
         setProgress(status);
 
         if (status.new_saved !== lastSaved) {

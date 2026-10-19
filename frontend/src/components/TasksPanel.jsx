@@ -8,7 +8,7 @@ function TasksPanel({ userEmail, refreshKey }) {
   const [error, setError] = useState(null);
 
   useEffect(() => {
-    apiGet("/api/tasks", { email: userEmail })
+    apiGet("/api/tasks", {})
       .then(setData)
       .catch((err) => setError(err.message));
   }, [userEmail, refreshKey]);

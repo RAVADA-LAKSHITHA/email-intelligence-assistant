@@ -1,29 +1,45 @@
 import { useState, useEffect } from "react";
-import { LOGIN_URL } from "./api";
+import { apiGet, apiPost, LOGIN_URL } from "./api";
 import Dashboard from "./pages/Dashboard";
 
-const STORAGE_KEY = "userEmail";
-
 function App() {
-  const [userEmail, setUserEmail] = useState(() => localStorage.getItem(STORAGE_KEY));
+  const [user, setUser] = useState(null); // null means "not logged in"
+  const [checking, setChecking] = useState(true); // true while we ask the server who we are
 
-  // After Google login, the backend sends us back with ?login=success&email=...
+  // On load: ask the backend who is logged in. The browser sends the cookie by itself.
   useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    const emailFromUrl = params.get("email");
-    if (params.get("login") === "success" && emailFromUrl) {
-      localStorage.setItem(STORAGE_KEY, emailFromUrl);
-      setUserEmail(emailFromUrl);
-      window.history.replaceState({}, "", window.location.pathname); // clean the URL
-    }
+    localStorage.removeItem("userEmail"); // the old login method, no longer used
+    apiGet("/api/auth/me")
+      .then(setUser)
+      .catch(() => setUser(null))
+      .finally(() => setChecking(false));
   }, []);
 
-  function handleLogout() {
-    localStorage.removeItem(STORAGE_KEY);
-    setUserEmail(null);
+  // If the session expires while the app is open, api.js lets us know.
+  useEffect(() => {
+    const handleExpired = () => setUser(null);
+    window.addEventListener("session-expired", handleExpired);
+    return () => window.removeEventListener("session-expired", handleExpired);
+  }, []);
+
+  async function handleLogout() {
+    try {
+      await apiPost("/api/auth/logout");
+    } catch {
+      // even if the server can't be reached, show the logged-out screen
+    }
+    setUser(null);
   }
 
-  if (!userEmail) {
+  if (checking) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-slate-900">
+        <p className="text-slate-400">Loading...</p>
+      </div>
+    );
+  }
+
+  if (!user) {
     return (
       <div className="min-h-screen bg-slate-900 flex items-center justify-center px-4">
         <div className="text-center max-w-md">
@@ -47,7 +63,7 @@ function App() {
       <header className="flex items-center justify-between border-b border-slate-800 px-6 py-4">
         <h1 className="text-xl font-bold">AI Email Assistant</h1>
         <div className="flex items-center gap-4">
-          <span className="text-sm text-slate-400">{userEmail}</span>
+          <span className="text-sm text-slate-400">{user.email}</span>
           <button
             onClick={handleLogout}
             className="rounded-md border border-slate-700 px-3 py-1 text-sm text-slate-300 hover:bg-slate-800"
@@ -57,7 +73,7 @@ function App() {
         </div>
       </header>
       <main className="mx-auto max-w-6xl p-6">
-        <Dashboard userEmail={userEmail} />
+        <Dashboard userEmail={user.email} />
       </main>
     </div>
   );

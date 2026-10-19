@@ -25,7 +25,7 @@ function EmailModal({ emailId, userEmail, onClose }) {
     setDetail(null);
     setError(null);
     setDraft("");
-    apiGet(`/api/emails/${emailId}`, { email: userEmail })
+    apiGet(`/api/emails/${emailId}`, {})
       .then(setDetail)
       .catch((err) => setError(err.message));
   }, [emailId, userEmail]);
@@ -45,7 +45,7 @@ function EmailModal({ emailId, userEmail, onClose }) {
     setCopied(false);
     try {
       const data = await apiPost(`/api/emails/${emailId}/draft-reply`, {
-        email: userEmail,
+
         tone,
       });
       setDraft(data.draft);

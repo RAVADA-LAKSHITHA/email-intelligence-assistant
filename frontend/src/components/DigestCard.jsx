@@ -18,7 +18,7 @@ function DigestCard({ userEmail }) {
     setLoading(true);
     setError(null);
     try {
-      const data = await apiGet("/api/emails/digest", { email: userEmail, hours });
+      const data = await apiGet("/api/emails/digest", {  hours });
       setDigest(data);
     } catch (err) {
       setError(err.message);
