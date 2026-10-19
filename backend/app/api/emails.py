@@ -7,7 +7,7 @@ from sqlalchemy.orm import Session
 from app.core.database import get_db
 from app.models.user import User
 from app.models.email import Email
-from app.services.gemini_service import generate_digest, VALID_CATEGORIES
+from app.services.gemini_service import generate_digest, generate_reply_draft, REPLY_TONES, VALID_CATEGORIES
 from app.services.sync_service import start_job, run_sync, get_status
 
 router = APIRouter(prefix="/api/emails", tags=["emails"])
@@ -176,3 +176,41 @@ def get_email(
         "snippet": item.snippet,
         "body": item.body,
     }
+
+@router.post("/{email_id}/draft-reply")
+def draft_reply(
+    email_id: int,
+    email: str = Query(...),
+    tone: str = Query("professional", description="professional, friendly or brief"),
+    db: Session = Depends(get_db),
+):
+    user = _get_user_or_404(db, email)
+
+    if tone not in REPLY_TONES:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Unknown tone. Choose one of: {list(REPLY_TONES)}",
+        )
+
+    item = (
+        db.query(Email)
+        .filter(Email.id == email_id, Email.user_id == user.id)
+        .first()
+    )
+    if not item:
+        raise HTTPException(status_code=404, detail="Email not found")
+
+    draft = generate_reply_draft(
+        subject=item.subject,
+        sender=item.sender,
+        body=item.body,
+        snippet=item.snippet,
+        tone=tone,
+    )
+    if draft is None:
+        raise HTTPException(
+            status_code=503,
+            detail="Could not write a draft right now. Try again in a minute.",
+        )
+
+    return {"draft": draft, "tone": tone}

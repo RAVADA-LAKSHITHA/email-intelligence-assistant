@@ -1,15 +1,30 @@
 import { useState, useEffect } from "react";
-import { apiGet } from "../api";
+import { apiGet, apiPost } from "../api";
 import { CATEGORY_STYLES, formatReceived, formatDeadline } from "../utils";
+
+// Replying makes no sense for these.
+const NO_REPLY_CATEGORIES = ["Promotions", "Spam", "Security", "Social"];
+
+const TONES = [
+  { value: "professional", label: "Professional" },
+  { value: "friendly", label: "Friendly" },
+  { value: "brief", label: "Brief" },
+];
 
 function EmailModal({ emailId, userEmail, onClose }) {
   const [detail, setDetail] = useState(null);
   const [error, setError] = useState(null);
+  const [tone, setTone] = useState("professional");
+  const [draft, setDraft] = useState("");
+  const [drafting, setDrafting] = useState(false);
+  const [draftError, setDraftError] = useState(null);
+  const [copied, setCopied] = useState(false);
 
   // Load the full email when the window opens.
   useEffect(() => {
     setDetail(null);
     setError(null);
+    setDraft("");
     apiGet(`/api/emails/${emailId}`, { email: userEmail })
       .then(setDetail)
       .catch((err) => setError(err.message));
@@ -24,8 +39,35 @@ function EmailModal({ emailId, userEmail, onClose }) {
     return () => window.removeEventListener("keydown", handleKey);
   }, [onClose]);
 
+  async function handleDraft() {
+    setDrafting(true);
+    setDraftError(null);
+    setCopied(false);
+    try {
+      const data = await apiPost(`/api/emails/${emailId}/draft-reply`, {
+        email: userEmail,
+        tone,
+      });
+      setDraft(data.draft);
+    } catch (err) {
+      setDraftError(err.message);
+    } finally {
+      setDrafting(false);
+    }
+  }
+
+  async function handleCopy() {
+    try {
+      await navigator.clipboard.writeText(draft);
+      setCopied(true);
+    } catch {
+      setDraftError("Could not copy. Select the text and press Ctrl+C.");
+    }
+  }
+
   const badgeStyle = detail ? CATEGORY_STYLES[detail.category] || CATEGORY_STYLES.Other : "";
   const deadline = detail ? formatDeadline(detail.deadline) : null;
+  const canDraft = detail && !NO_REPLY_CATEGORIES.includes(detail.category);
   const bodyText = detail
     ? (detail.body && detail.body.trim()) || detail.snippet || "(This email has no text content.)"
     : "";
@@ -86,6 +128,61 @@ function EmailModal({ emailId, userEmail, onClose }) {
                   What to do
                 </p>
                 <p className="mt-1 text-sm text-amber-100">{detail.action_item_description}</p>
+              </div>
+            )}
+
+            {canDraft && (
+              <div className="mt-5">
+                <h3 className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+                  Reply with AI
+                </h3>
+                <div className="mt-2 flex gap-2">
+                  <select
+                    value={tone}
+                    onChange={(e) => setTone(e.target.value)}
+                    className="rounded-md border border-slate-700 bg-slate-900 px-2 py-1 text-sm text-slate-200"
+                  >
+                    {TONES.map((t) => (
+                      <option key={t.value} value={t.value}>
+                        {t.label}
+                      </option>
+                    ))}
+                  </select>
+                  <button
+                    onClick={handleDraft}
+                    disabled={drafting}
+                    className="rounded-md bg-blue-600 px-3 py-1 text-sm font-semibold text-white hover:bg-blue-500 disabled:opacity-50"
+                  >
+                    {drafting ? "Writing..." : draft ? "Write again" : "Draft reply"}
+                  </button>
+                </div>
+
+                {draftError && <p className="mt-2 text-sm text-red-400">{draftError}</p>}
+
+                {draft && (
+                  <div className="mt-3">
+                    <textarea
+                      value={draft}
+                      onChange={(e) => {
+                        setDraft(e.target.value);
+                        setCopied(false);
+                      }}
+                      rows={8}
+                      className="w-full rounded-lg border border-slate-700 bg-slate-950 p-3 text-sm text-slate-200"
+                    />
+                    <div className="mt-2 flex items-center justify-between gap-3">
+                      <p className="text-xs text-slate-500">
+                        Review and edit before you send. Nothing is sent automatically.
+                      </p>
+                      <button
+                        onClick={handleCopy}
+                        className="rounded-md border border-slate-700 px-3 py-1 text-sm text-slate-300 hover:bg-slate-800"
+                      >
+                        {copied ? "Copied" : "Copy"}
+                      </button>
+                    </div>
+                  </div>
+                )}
               </div>
             )}
 
