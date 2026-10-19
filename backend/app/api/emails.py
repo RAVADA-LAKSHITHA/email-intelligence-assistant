@@ -5,30 +5,24 @@ from sqlalchemy import func
 from sqlalchemy.orm import Session
 
 from app.core.database import get_db
+from app.core.deps import get_current_user
 from app.models.user import User
 from app.models.email import Email
-from app.services.gemini_service import generate_digest, generate_reply_draft, REPLY_TONES, VALID_CATEGORIES
+from app.services.gemini_service import (
+    generate_digest,
+    generate_reply_draft,
+    REPLY_TONES,
+    VALID_CATEGORIES,
+)
 from app.services.sync_service import start_job, run_sync, get_status
 
 router = APIRouter(prefix="/api/emails", tags=["emails"])
 
 
-def _get_user_or_404(db: Session, email: str) -> User:
-    user = db.query(User).filter(User.email == email).first()
-    if not user:
-        raise HTTPException(status_code=404, detail="User not found")
-    return user
-
-
 @router.post("/sync")
-def start_sync(
-    background_tasks: BackgroundTasks,
-    email: str = Query(..., description="Logged-in user's email"),
-    db: Session = Depends(get_db),
-):
-    user = db.query(User).filter(User.email == email).first()
-    if not user or not user.oauth_token:
-        raise HTTPException(status_code=404, detail="User not found or not logged in")
+def start_sync(background_tasks: BackgroundTasks, user: User = Depends(get_current_user)):
+    if not user.oauth_token:
+        raise HTTPException(status_code=400, detail="Gmail is not connected. Log in again.")
 
     if not start_job(user.id):
         return {"status": "already_running"}
@@ -38,20 +32,17 @@ def start_sync(
 
 
 @router.get("/sync/status")
-def sync_status(email: str = Query(...), db: Session = Depends(get_db)):
-    user = _get_user_or_404(db, email)
+def sync_status(user: User = Depends(get_current_user)):
     return get_status(user.id)
 
 
 @router.get("")
 def list_emails(
-    email: str = Query(...),
     category: str | None = Query(None, description="Optional: only show this category"),
     action_only: bool = Query(False, description="If true, only emails that need action"),
+    user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
-    user = _get_user_or_404(db, email)
-
     if category is not None and category not in VALID_CATEGORIES:
         raise HTTPException(
             status_code=400,
@@ -84,9 +75,7 @@ def list_emails(
 
 
 @router.get("/stats")
-def email_stats(email: str = Query(...), db: Session = Depends(get_db)):
-    user = _get_user_or_404(db, email)
-
+def email_stats(user: User = Depends(get_current_user), db: Session = Depends(get_db)):
     rows = (
         db.query(Email.category, func.count(Email.id))
         .filter(Email.user_id == user.id)
@@ -101,12 +90,10 @@ def email_stats(email: str = Query(...), db: Session = Depends(get_db)):
 
 @router.get("/digest")
 def email_digest(
-    email: str = Query(...),
     hours: int = Query(24, ge=1, le=720, description="Look back this many hours"),
+    user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
-    user = _get_user_or_404(db, email)
-
     since = datetime.now(timezone.utc).replace(tzinfo=None) - timedelta(hours=hours)
     rows = (
         db.query(Email)
@@ -147,11 +134,9 @@ def email_digest(
 @router.get("/{email_id}")
 def get_email(
     email_id: int,
-    email: str = Query(..., description="Logged-in user's email"),
+    user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
-    user = _get_user_or_404(db, email)
-
     item = (
         db.query(Email)
         .filter(Email.id == email_id, Email.user_id == user.id)
@@ -177,15 +162,14 @@ def get_email(
         "body": item.body,
     }
 
+
 @router.post("/{email_id}/draft-reply")
 def draft_reply(
     email_id: int,
-    email: str = Query(...),
     tone: str = Query("professional", description="professional, friendly or brief"),
+    user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
-    user = _get_user_or_404(db, email)
-
     if tone not in REPLY_TONES:
         raise HTTPException(
             status_code=400,

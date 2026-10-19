@@ -22,6 +22,11 @@ class Settings(BaseSettings):
 
     SYNC_MAX_EMAILS: int = 25
 
+    SECRET_KEY: str
+    SESSION_DAYS: int = 7
+    COOKIE_SECURE: bool = False  # set to True once the site uses https
+    COOKIE_SAMESITE: str = "lax"
+
     model_config = SettingsConfigDict(
         env_file=".env",
         env_file_encoding="utf-8",

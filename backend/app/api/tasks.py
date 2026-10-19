@@ -1,9 +1,10 @@
 from datetime import datetime, timezone
 
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 
 from app.core.database import get_db
+from app.core.deps import get_current_user
 from app.models.user import User
 from app.models.email import Email
 
@@ -11,11 +12,7 @@ router = APIRouter(prefix="/api/tasks", tags=["tasks"])
 
 
 @router.get("")
-def list_tasks(email: str = Query(...), db: Session = Depends(get_db)):
-    user = db.query(User).filter(User.email == email).first()
-    if not user:
-        raise HTTPException(status_code=404, detail="User not found")
-
+def list_tasks(user: User = Depends(get_current_user), db: Session = Depends(get_db)):
     rows = (
         db.query(Email)
         .filter(Email.user_id == user.id, Email.has_action_item.is_(True))
