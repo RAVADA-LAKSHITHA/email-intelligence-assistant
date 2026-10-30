@@ -1,0 +1,8 @@
+{
+  "rewrites": [
+    {
+      "source": "/api/:path*",
+      "destination": "https://email-assistant-api-0ie4.onrender.com/api/:path*"
+    }
+  ]
+}

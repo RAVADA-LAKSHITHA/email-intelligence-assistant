@@ -1,9 +1,10 @@
-export const API_URL = import.meta.env.VITE_API_URL;
+// On the live site this is empty, so requests go to the same address as the page.
+export const API_URL = import.meta.env.VITE_API_URL || "";
 
 export const LOGIN_URL = `${API_URL}/api/auth/google/login`;
 
 async function request(method, path, params = {}) {
-  const url = new URL(`${API_URL}${path}`);
+  const url = new URL(`${API_URL}${path}`, window.location.origin);
   Object.entries(params).forEach(([key, value]) => {
     if (value !== undefined && value !== null && value !== "") {
       url.searchParams.set(key, value);
