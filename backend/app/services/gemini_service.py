@@ -30,7 +30,7 @@ ANALYSIS_PROMPT = """You are an email triage assistant. Analyze the email below 
 Category guide:
 - Promotions: marketing, offers, discounts, newsletters, and engagement nudges from apps and services (streak reminders, "try our new feature", trial offers).
 - Finance: bank statements, transactions, bills, payment and tax notices.
-- Security: sign-in alerts, password and 2-step verification notices.
+- Security: sign-in alerts, one-time verification codes, password and 2-step verification notices.
 - Work: messages about jobs, internships, interviews, or colleagues.
 - Education: courses, assignments, exams, and college or learning-platform notices that are not marketing.
 - Personal: messages from real people such as friends and family.
@@ -38,7 +38,7 @@ Category guide:
 - Spam: unsolicited or suspicious mail.
 - Other: anything else.
 
-Rules for has_action_item: true ONLY if the recipient genuinely needs to do something specific, such as pay a bill, reply to a person, attend a meeting, submit something, or secure their account. Marketing calls to action ("try now", "claim offer", "keep your streak") are NOT action items, so use false for them.
+Rules for has_action_item: true ONLY if the recipient genuinely needs to do something specific, such as pay a bill, reply to a person, attend a meeting, submit something, or secure their account. Marketing calls to action ("try now", "claim offer", "keep your streak") are NOT action items, so use false for them.One-time passcodes and verification codes (logins, sudo, deployment approvals) are NOT action items, so use false for them, and never copy the code into the summary or the action text.
 
 Rules for deadline: set a date ONLY when has_action_item is true and the email gives a real due date or event date. Offer expiry dates in marketing emails are not deadlines, so use null. This email was sent on {sent}. Resolve relative dates such as "today" or "this Friday" against that sent date, not against today's date.
 
