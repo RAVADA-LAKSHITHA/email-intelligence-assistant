@@ -7,29 +7,29 @@ function EmailCard({ email, onOpen }) {
   return (
     <div
       onClick={() => onOpen(email.id)}
-      className="cursor-pointer rounded-xl border border-slate-800 bg-slate-800/40 p-4 transition hover:border-slate-600 hover:bg-slate-800/70"
+      className="glass-soft glass-hover cursor-pointer p-4"
     >
       <div className="flex items-start justify-between gap-4">
         <div className="min-w-0">
-          <h3 className="truncate font-semibold text-white">{email.subject}</h3>
-          <p className="truncate text-sm text-slate-400">{email.sender}</p>
+          <h3 className="truncate font-semibold text-slate-900">{email.subject}</h3>
+          <p className="truncate text-sm text-slate-500">{email.sender}</p>
         </div>
-        <span className="shrink-0 text-xs text-slate-500">{formatReceived(email.received_at)}</span>
+        <span className="shrink-0 text-xs text-slate-400">{formatReceived(email.received_at)}</span>
       </div>
 
-      <p className="mt-3 text-sm text-slate-300">{email.summary}</p>
+      <p className="mt-3 text-sm text-slate-700">{email.summary}</p>
 
       <div className="mt-3 flex flex-wrap items-center gap-2">
         <span className={`rounded-full px-2.5 py-0.5 text-xs font-medium ${badgeStyle}`}>
           {email.category || "Uncategorized"}
         </span>
         {email.has_action_item && (
-          <span className="rounded-full bg-amber-500/20 px-2.5 py-0.5 text-xs font-medium text-amber-300">
+          <span className="rounded-full bg-amber-100 px-2.5 py-0.5 text-xs font-medium text-amber-800">
             Action needed
           </span>
         )}
         {deadline && (
-          <span className="rounded-full bg-slate-700 px-2.5 py-0.5 text-xs text-slate-300">
+          <span className="rounded-full border border-white/80 bg-white/70 px-2.5 py-0.5 text-xs text-slate-600">
             Due {deadline}
           </span>
         )}

@@ -21,8 +21,8 @@ function CategoryTabs({ stats, active, onChange }) {
             className={
               "rounded-full px-4 py-1.5 text-sm font-medium transition " +
               (isActive
-                ? "bg-blue-600 text-white"
-                : "bg-slate-800 text-slate-300 hover:bg-slate-700")
+                ? "bg-gradient-to-r from-indigo-500 to-violet-500 text-white shadow-md shadow-indigo-300/50"
+                : "border border-white/80 bg-white/60 text-slate-700 hover:bg-white/90")
             }
           >
             {tab.label} <span className="ml-1 opacity-70">{tab.count}</span>

@@ -2,11 +2,21 @@ import { useState, useEffect } from "react";
 import { apiGet, apiPost, LOGIN_URL } from "./api";
 import Dashboard from "./pages/Dashboard";
 
+const GITHUB_URL = "https://github.com/RAVADA-LAKSHITHA/email-intelligence-assistant";
+
+const FEATURES = [
+  "Sorts every email into a category",
+  "Finds tasks and deadlines for you",
+  "Drafts replies you can edit",
+];
+
+const TITLE_STYLE =
+  "bg-gradient-to-r from-indigo-600 to-violet-600 bg-clip-text font-bold text-transparent";
+
 function App() {
   const [user, setUser] = useState(null); // null means "not logged in"
   const [checking, setChecking] = useState(true); // true while we ask the server who we are
 
-  // On load: ask the backend who is logged in. The browser sends the cookie by itself.
   useEffect(() => {
     localStorage.removeItem("userEmail"); // the old login method, no longer used
     apiGet("/api/auth/me")
@@ -15,7 +25,6 @@ function App() {
       .finally(() => setChecking(false));
   }, []);
 
-  // If the session expires while the app is open, api.js lets us know.
   useEffect(() => {
     const handleExpired = () => setUser(null);
     window.addEventListener("session-expired", handleExpired);
@@ -33,46 +42,53 @@ function App() {
 
   if (checking) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-slate-900">
-        <p className="text-slate-400">Loading...</p>
+      <div className="flex min-h-screen items-center justify-center">
+        <p className="text-slate-500">Loading...</p>
       </div>
     );
   }
 
   if (!user) {
     return (
-      <div className="min-h-screen bg-slate-900 flex items-center justify-center px-4">
-        <div className="text-center max-w-md">
-          <h1 className="text-4xl font-bold text-white">AI Email Intelligence Assistant</h1>
-          <p className="mt-3 text-slate-400">
+      <div className="flex min-h-screen items-center justify-center px-4">
+        <div className="glass w-full max-w-lg p-10 text-center">
+          <h1 className={`text-4xl ${TITLE_STYLE}`}>AI Email Assistant</h1>
+          <p className="mt-3 text-slate-600">
             Connect your Gmail and let AI sort, summarize, and pull out your tasks.
           </p>
-          <a
-            href={LOGIN_URL}
-            className="mt-8 inline-block rounded-lg bg-blue-600 px-6 py-3 font-semibold text-white hover:bg-blue-500"
-          >
+          <ul className="mt-6 space-y-2 text-sm text-slate-600">
+            {FEATURES.map((feature) => (
+              <li key={feature}>✓ {feature}</li>
+            ))}
+          </ul>
+          <a href={LOGIN_URL} className="btn-primary mt-8 inline-block px-8 py-3">
             Connect Gmail
           </a>
+          <p className="mt-6 text-xs text-slate-500">
+            Private beta: Google only lets approved accounts sign in.{" "}
+            <a href={GITHUB_URL} target="_blank" rel="noreferrer" className="underline">
+              View the code on GitHub
+            </a>
+          </p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-slate-900 text-white">
-      <header className="flex items-center justify-between border-b border-slate-800 px-6 py-4">
-        <h1 className="text-xl font-bold">AI Email Assistant</h1>
-        <div className="flex items-center gap-4">
-          <span className="text-sm text-slate-400">{user.email}</span>
-          <button
-            onClick={handleLogout}
-            className="rounded-md border border-slate-700 px-3 py-1 text-sm text-slate-300 hover:bg-slate-800"
-          >
-            Log out
-          </button>
-        </div>
-      </header>
-      <main className="mx-auto max-w-6xl p-6">
+    <div className="min-h-screen">
+      <div className="sticky top-0 z-20 px-3 pt-3">
+        <header className="glass mx-auto flex max-w-6xl items-center justify-between px-6 py-3">
+          <h1 className={`text-xl ${TITLE_STYLE}`}>AI Email Assistant</h1>
+          <div className="flex items-center gap-4">
+            <span className="hidden text-sm text-slate-600 sm:inline">{user.email}</span>
+            <button onClick={handleLogout} className="btn-ghost text-sm">
+              Log out
+            </button>
+          </div>
+        </header>
+      </div>
+      <main className="mx-auto max-w-6xl p-4 sm:p-6">
         <Dashboard userEmail={user.email} />
       </main>
     </div>

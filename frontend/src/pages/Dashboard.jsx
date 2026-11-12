@@ -17,7 +17,7 @@ function Dashboard({ userEmail }) {
   const [error, setError] = useState(null);
 
   useEffect(() => {
-    apiGet("/api/emails/stats", {})
+    apiGet("/api/emails/stats")
       .then(setStats)
       .catch((err) => setError(err.message));
   }, [userEmail, refreshKey]);
@@ -25,7 +25,7 @@ function Dashboard({ userEmail }) {
   useEffect(() => {
     setLoading(true);
     setError(null);
-    apiGet("/api/emails", {  category })
+    apiGet("/api/emails", { category })
       .then((data) => setEmails(data.emails))
       .catch((err) => setError(err.message))
       .finally(() => setLoading(false));
@@ -41,10 +41,10 @@ function Dashboard({ userEmail }) {
 
           <CategoryTabs stats={stats} active={category} onChange={setCategory} />
 
-          {error && <p className="text-red-400">Could not load emails: {error}</p>}
-          {!error && loading && <p className="text-slate-400">Loading your emails...</p>}
+          {error && <p className="text-rose-600">Could not load emails: {error}</p>}
+          {!error && loading && <p className="text-slate-500">Loading your emails...</p>}
           {!error && !loading && emails.length === 0 && (
-            <p className="text-slate-400">No emails here yet. Click Sync Gmail.</p>
+            <p className="text-slate-500">No emails here yet. Click Sync Gmail.</p>
           )}
           {!error && !loading && emails.length > 0 && (
             <div className="space-y-3">
@@ -55,7 +55,7 @@ function Dashboard({ userEmail }) {
           )}
         </div>
 
-        <aside className="space-y-4">
+        <aside className="space-y-4 lg:sticky lg:top-24 lg:self-start">
           <DigestCard userEmail={userEmail} />
           <TasksPanel userEmail={userEmail} refreshKey={refreshKey} />
         </aside>
