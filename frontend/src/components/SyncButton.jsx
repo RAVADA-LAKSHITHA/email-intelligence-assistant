@@ -25,12 +25,12 @@ function SyncButton({ userEmail, onSynced }) {
     setMessage(null);
 
     try {
-      await apiPost("/api/emails/sync", {});
+      await apiPost("/api/emails/sync");
 
       let lastSaved = 0;
       while (true) {
         await sleep(2000);
-        const status = await apiGet("/api/emails/sync/status", {});
+        const status = await apiGet("/api/emails/sync/status");
         setProgress(status);
 
         if (status.new_saved !== lastSaved) {
@@ -39,7 +39,6 @@ function SyncButton({ userEmail, onSynced }) {
         }
 
         if (status.status === "done") {
-          // An automatic sync that found nothing stays quiet.
           const quiet =
             isAuto && status.new_saved === 0 && status.failed === 0 && !status.stopped_early;
           if (!quiet) {
@@ -86,11 +85,11 @@ function SyncButton({ userEmail, onSynced }) {
     <div className="flex items-center gap-3">
       {syncing && (
         <>
-          <span className="text-xs text-slate-400">{progressText(progress)}</span>
+          <span className="text-xs text-slate-500">{progressText(progress)}</span>
           {progress && progress.total > 0 && (
-            <div className="h-1.5 w-24 overflow-hidden rounded-full bg-slate-700">
+            <div className="h-1.5 w-24 overflow-hidden rounded-full bg-white/80">
               <div
-                className="h-full bg-blue-500 transition-all"
+                className="h-full bg-gradient-to-r from-indigo-500 to-violet-500 transition-all"
                 style={{ width: `${(progress.processed / progress.total) * 100}%` }}
               />
             </div>
@@ -98,7 +97,7 @@ function SyncButton({ userEmail, onSynced }) {
         </>
       )}
       {!syncing && message && (
-        <span className={"text-xs " + (message.isError ? "text-amber-400" : "text-green-400")}>
+        <span className={"text-xs " + (message.isError ? "text-amber-600" : "text-emerald-600")}>
           {message.text}
         </span>
       )}
@@ -108,11 +107,7 @@ function SyncButton({ userEmail, onSynced }) {
           {lastSynced.toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" })}
         </span>
       )}
-      <button
-        onClick={() => runSync(false)}
-        disabled={syncing}
-        className="rounded-md bg-blue-600 px-4 py-1.5 text-sm font-semibold text-white hover:bg-blue-500 disabled:opacity-50"
-      >
+      <button onClick={() => runSync(false)} disabled={syncing} className="btn-primary text-sm">
         {syncing ? "Syncing..." : "Sync Gmail"}
       </button>
     </div>

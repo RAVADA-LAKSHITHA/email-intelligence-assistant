@@ -99,3 +99,34 @@ body::after {
 .btn-ghost:hover {
   background: rgba(255, 255, 255, 0.9);
 }
+
+/* Stronger glass for pop-up windows */
+.glass-strong {
+  background: rgba(255, 255, 255, 0.82);
+  -webkit-backdrop-filter: blur(24px) saturate(180%);
+  backdrop-filter: blur(24px) saturate(180%);
+  border: 1px solid rgba(255, 255, 255, 0.9);
+  box-shadow: 0 24px 64px rgba(79, 70, 229, 0.25);
+  border-radius: 1.5rem;
+}
+
+/* Gentle fade-in */
+@keyframes fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+.fade-up {
+  animation: fade-up 0.35s ease backwards;
+}
+
+/* Slim, soft scrollbars */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(129, 140, 248, 0.5) transparent;
+}

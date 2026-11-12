@@ -7,7 +7,7 @@ function EmailCard({ email, onOpen }) {
   return (
     <div
       onClick={() => onOpen(email.id)}
-      className="glass-soft glass-hover cursor-pointer p-4"
+      className="glass-soft glass-hover fade-up cursor-pointer p-4"
     >
       <div className="flex items-start justify-between gap-4">
         <div className="min-w-0">
