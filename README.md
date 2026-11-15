@@ -1,5 +1,7 @@
 # AI Email Intelligence Assistant
 
+![Tests](https://github.com/RAVADA-LAKSHITHA/email-intelligence-assistant/actions/workflows/tests.yml/badge.svg)
+
 An AI assistant that connects to your Gmail, then sorts and summarizes your emails and pulls out tasks and deadlines, all in one dashboard.
 
 **Live demo:** https://email-intelligence-assistant.vercel.app
